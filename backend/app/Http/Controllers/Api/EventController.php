@@ -15,10 +15,9 @@ class EventController extends Controller
     // Requerimiento: Ver catálogo semanal  
     public function index()
     {
-        $events = Event::where('available_spots', '>', 0) // Opcional: mostrar solo con cupo
-                       ->where('start_time', '>=', now()) // Solo eventos futuros
-                       ->orderBy('start_time')
-                       ->get();
+        // Obtenemos todos los eventos, incluyendo su categoría (Académico/Social)
+    // Se recomienda usar orderBy para mantener el catálogo organizado semanalmente
+        $events = Event::with('category')->orderBy('start_time', 'asc')->get();
 
         return response()->json($events);
     }
