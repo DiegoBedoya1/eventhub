@@ -8,14 +8,13 @@ return new class extends Migration
 {
     public function up()
     {
-        // Tabla Categorías 
+         
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique(); // 'Social', 'Académico'
             $table->timestamps();
         });
 
-        // Tabla Usuarios (Necesaria para identificar quién confirma) 
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('full_name');
@@ -23,7 +22,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Tabla Eventos 
         Schema::create('events', function (Blueprint $table) {
             $table->id();
             $table->string('title');
@@ -33,7 +31,7 @@ return new class extends Migration
             $table->string('location');
             $table->foreignId('category_id')->constrained();
             
-            // Lógica de cupos según requerimientos 
+          
             $table->enum('type', ['ABIERTO', 'CERRADO'])->default('ABIERTO'); 
             $table->integer('max_capacity');
             $table->integer('available_spots'); // Campo contador para optimizar lectura
@@ -41,7 +39,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Tabla Inscripciones (Control de Asistencia) [cite: 21, 34]
+       
         Schema::create('registrations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
