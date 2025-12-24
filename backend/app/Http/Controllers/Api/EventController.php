@@ -99,4 +99,20 @@ class EventController extends Controller
             ]);
         });
     }
+
+    public function getParticipants($id)
+    {
+        $event = Event::findOrFail($id);
+        
+        $participants = Registration::where('event_id', $id)
+            ->with('user:id,full_name,email') 
+            ->get()
+            ->pluck('user'); 
+        
+        return response()->json([
+            'event_title' => $event->title,
+            'total_participants' => $participants->count(),
+            'participants' => $participants
+        ]);
+     }
 }
