@@ -94,6 +94,7 @@ class EventController extends Controller
         });
     }
 
+
     public function cancelRegistration(Request $request, $eventId)
     {
         // validamos que el usuario envie su correo para identificar su registro
@@ -134,21 +135,21 @@ class EventController extends Controller
         });
     }
 
+    
     public function getParticipants($id)
-{
-    
-    $event = Event::findOrFail($id);
+    {
+        $event = Event::findOrFail($id);
+        
+        $participants = Registration::where('event_id', $id)
+            ->with('user:id,full_name,email') 
+            ->get()
+            ->pluck('user'); 
+        
+        return response()->json([
+            'event_title' => $event->title,
+            'total_participants' => $participants->count(),
+            'participants' => $participants
+        ]);
+     }
 
-    
-    $participants = Registration::where('event_id', $id)
-        ->with('user:id,full_name,email') 
-        ->get()
-        ->pluck('user'); 
-
-    return response()->json([
-        'event_title' => $event->title,
-        'total_participants' => $participants->count(),
-        'participants' => $participants
-    ]);
-}
 }

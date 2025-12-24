@@ -14,7 +14,7 @@ class EventSeeder extends Seeder
         $academico = Category::firstOrCreate(['name' => 'Académico']);
         $social = Category::firstOrCreate(['name' => 'Social']);
 
-        
+
         Event::insert([
             [
                 'title' => 'Seminario de Inteligencia Artificial',
@@ -25,7 +25,7 @@ class EventSeeder extends Seeder
                 'category_id' => $academico->id,
                 'type' => 'CERRADO',
                 'max_capacity' => 150,
-                'available_spots' => 63, 
+                'available_spots' => 150,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -51,7 +51,7 @@ class EventSeeder extends Seeder
                 'category_id' => $academico->id,
                 'type' => 'CERRADO',
                 'max_capacity' => 30,
-                'available_spots' => 2, 
+                'available_spots' => 30,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]

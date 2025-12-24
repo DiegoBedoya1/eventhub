@@ -1,0 +1,33 @@
+@baseUrl = http://127.0.0.1:8000/api
+@event = 4
+
+### Listar todos los eventos (Catálogo)
+GET {{baseUrl}}/events
+Accept: application/json
+
+###
+### Registro de un nuevo participante
+### (Esto creará al usuario y restará el cupo)
+POST {{baseUrl}}/events/{{event}}/register
+Content-Type: application/json
+Accept: application/json
+
+{
+    "full_name": "Diego Bedoya",
+    "email": "diego@espol.edu.ec"
+}
+
+###
+### Ver lista de participantes de un evento
+GET {{baseUrl}}/events/{{event}}/participants
+Accept: application/json
+
+###
+### Cancelar registro (Devolver cupo)
+DELETE {{baseUrl}}/events/{{event}}/cancel
+Content-Type: application/json
+Accept: application/json
+
+{
+    "email": "diego@espol.edu.ec"
+}
