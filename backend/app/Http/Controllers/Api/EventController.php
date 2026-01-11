@@ -32,13 +32,15 @@ class EventController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string', // Faltaba esto
+            'location' => 'required|string',    // Faltaba esto
             'category_id' => 'required|exists:categories,id',
             'type' => 'required|in:ABIERTO,CERRADO',
-            'max_capacity' => 'required|integer',
+            'max_capacity' => 'required|integer|min:1',
             'start_time' => 'required|date',
+            'end_time' => 'required|date|after:start_time', // Faltaba esto
         ]);
-
         // cupos disponibles igual a la capacidad máxima
         $validated['available_spots'] = $validated['max_capacity'];
 
@@ -135,21 +137,20 @@ class EventController extends Controller
         });
     }
 
-    
+
     public function getParticipants($id)
     {
         $event = Event::findOrFail($id);
-        
+
         $participants = Registration::where('event_id', $id)
-            ->with('user:id,full_name,email') 
+            ->with('user:id,full_name,email')
             ->get()
-            ->pluck('user'); 
-        
+            ->pluck('user');
+
         return response()->json([
             'event_title' => $event->title,
             'total_participants' => $participants->count(),
             'participants' => $participants
         ]);
-     }
-
+    }
 }

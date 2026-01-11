@@ -1,9 +1,27 @@
 @baseUrl = http://127.0.0.1:8000/api
-@event = 4
+@event = 5
 
 ### Listar todos los eventos (Catálogo)
 GET {{baseUrl}}/events
 Accept: application/json
+
+
+### Crear un nuevo evento (Organizar Evento)
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+    "title": "Conferencia de Ciberseguridad 2025",
+    "description": "Expertos internacionales hablan sobre la proteccion de datos en la nube.",
+    "location": "Auditorio de la Facultad de Ingeniería",
+    "start_time": "2025-12-30 09:00:00",
+    "end_time": "2025-12-30 13:00:00",
+    "category_id": 1,
+    "type": "CERRADO",
+    "max_capacity": 200,
+    "available_spots": 200
+}
 
 ###
 ### Registro de un nuevo participante
@@ -13,8 +31,8 @@ Content-Type: application/json
 Accept: application/json
 
 {
-    "full_name": "Diego Bedoya",
-    "email": "diego@espol.edu.ec"
+    "full_name": "Juan Perez",
+    "email": "juan2123@espol.edu.ec"
 }
 
 ###
