@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  /* ESPOL Color Palette */
+  --color-espol-navy: #003366;
+  --color-espol-blue: #0066cc;
+  --color-espol-light: #e6f2ff;
+  --color-espol-white: #ffffff;
+  
+  /* Semantic Colors */
+  --color-primary: var(--color-espol-navy);
+  --color-secondary: var(--color-espol-blue);
+  --color-background: #f8fafc;
+  --color-surface: var(--color-espol-white);
+  --color-text: #1e293b;
+  --color-text-light: #64748b;
+  --color-border: #e2e8f0;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+
+  /* Spacing */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-primary);
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-primary);
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+p {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+button {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+small {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-text-light);
+}
