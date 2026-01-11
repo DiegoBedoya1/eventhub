@@ -61,7 +61,7 @@ export function EventDetails({
                 {event.title}
               </h2>
               <div className="flex items-center gap-4 text-sm">
-                <span className="!text-red bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                <span className="text-black bg-white bg-opacity-20 px-3 py-1 rounded-full">
                   {event.category}
                 </span>
                 {isFull && (
@@ -215,7 +215,7 @@ export function EventDetails({
             )}
           </div>
 
-          
+          {/* boton aqui */}
           
         </div>
       </div>
