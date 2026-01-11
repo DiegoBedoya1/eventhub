@@ -4,9 +4,10 @@ import { EventCard } from './EventCard';
 
 interface EventCatalogProps {
   events: Event[];
+  onViewDetails: (eventId: string) => void;
 }
 
-export function EventCatalog({ events }: EventCatalogProps) {
+export function EventCatalog({ events, onViewDetails }: EventCatalogProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Events Grid */}
@@ -16,6 +17,7 @@ export function EventCatalog({ events }: EventCatalogProps) {
             <EventCard
               key={event.id}
               event={event}
+              onViewDetails={onViewDetails}
             />
           ))}
         </div>

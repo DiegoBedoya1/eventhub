@@ -3,9 +3,10 @@ import { Event } from '../types/event';
 
 interface EventCardProps {
   event: Event;
+  onViewDetails: (eventId: string) => void;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, onViewDetails }: EventCardProps) {
   const attendancePercentage = (event.attendees / event.capacity) * 100;
   const isAlmostFull = attendancePercentage >= 80;
   const isFull = event.attendees >= event.capacity;
@@ -90,6 +91,13 @@ export function EventCard({ event }: EventCardProps) {
                 <span className="text-[var(--color-text-light)]"> / {event.capacity} asistentes</span>
               </span>
             </div>
+
+            <button
+              onClick={() => onViewDetails(event.id)}
+              className="bg-[var(--color-secondary)] text-white px-6 py-2.5 rounded-lg hover:bg-[var(--color-primary)] transition-colors"
+            >
+              Ver detalles
+            </button>
           </div>
 
           {/* Progress bar */}
