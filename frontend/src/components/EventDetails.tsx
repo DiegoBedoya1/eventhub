@@ -216,6 +216,87 @@ export function EventDetails({
           </div>
 
           {/* boton aqui */}
+          {/* Registration Form */}
+          {showForm && !isRegistered && (
+            <div className="mb-6 border border-[var(--color-border)] rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4>Confirmar asistencia</h4>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="text-[var(--color-text-light)] hover:text-[var(--color-text)]"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+              </div>
+              <form
+                onSubmit={handleRegister}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm mb-1">
+                    Nombre completo
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        name: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)]"
+                    placeholder="Tu nombre"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">
+                    Correo institucional
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        email: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)]"
+                    placeholder="tu.correo@espol.edu.ec"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full bg-[var(--color-secondary)] text-white py-2 rounded-lg hover:bg-[var(--color-primary)] transition-colors"
+                >
+                  Confirmar asistencia
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          {!showForm && !isRegistered && (
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowForm(true)}
+                disabled={isFull}
+                className={`flex-1 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                  isFull
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-[var(--color-secondary)] text-white hover:bg-[var(--color-primary)]"
+                }`}
+              >
+                <CheckCircle className="w-5 h-5" />
+                {isFull
+                  ? "Evento lleno"
+                  : "Confirmar asistencia"}
+              </button>
+            </div>
+          )}
           
         </div>
       </div>
