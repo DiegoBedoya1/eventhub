@@ -2,8 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model; // <--- ESTA LÍNEA ES LA QUE FALTA
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens; // Para usar tokens con tu frontend de Vite
+use Illuminate\Notifications\Notifiable;
 
-class User extends Model {
-    protected $guarded = [];
+class User extends Authenticatable
+{
+    use HasApiTokens, Notifiable;
+
+    protected $fillable = [
+        'full_name',
+        'email',
+        'password',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    // Si quieres que el password se encripte automáticamente (Laravel 10+)
+    protected $casts = [
+        'password' => 'hashed',
+    ];
 }
