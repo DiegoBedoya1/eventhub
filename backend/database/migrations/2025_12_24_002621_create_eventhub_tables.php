@@ -31,11 +31,10 @@ return new class extends Migration
             $table->string('location');
             $table->foreignId('category_id')->constrained();
             
-          
+
             $table->enum('type', ['ABIERTO', 'CERRADO'])->default('ABIERTO'); 
             $table->integer('max_capacity');
             $table->integer('available_spots'); // Campo contador para optimizar lectura
-            
             $table->timestamps();
         });
 
@@ -46,7 +45,7 @@ return new class extends Migration
             $table->foreignId('event_id')->constrained();
             $table->enum('status', ['CONFIRMED', 'CANCELLED'])->default('CONFIRMED');
             $table->timestamps();
-
+            
             // Evitar doble inscripción activa
             $table->unique(['user_id', 'event_id']);
         });

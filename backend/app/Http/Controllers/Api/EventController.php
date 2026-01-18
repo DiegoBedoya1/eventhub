@@ -33,13 +33,13 @@ class EventController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'required|string', // Faltaba esto
-            'location' => 'required|string',    // Faltaba esto
+            'description' => 'required|string', 
+            'location' => 'required|string',    
             'category_id' => 'required|exists:categories,id',
             'type' => 'required|in:ABIERTO,CERRADO',
             'max_capacity' => 'required|integer|min:1',
             'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time', // Faltaba esto
+            'end_time' => 'required|date|after:start_time', 
         ]);
         // cupos disponibles igual a la capacidad máxima
         $validated['available_spots'] = $validated['max_capacity'];
