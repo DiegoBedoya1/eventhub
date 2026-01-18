@@ -1,10 +1,14 @@
 @baseUrl = http://127.0.0.1:8000/api
-@event = 5
+@event = 25
+@token = 9|u68pwe0ZnggaOyJo3qd6SHbe4R6LclHnPtIFYcyw07b886c8
 
 ### Listar todos los eventos (Catálogo)
 GET {{baseUrl}}/events
 Accept: application/json
 
+### evento especifico
+GET {{baseUrl}}/events/{{event}}
+Accept: application/json
 
 ### Crear un nuevo evento (Organizar Evento)
 POST {{baseUrl}}/events
@@ -60,4 +64,37 @@ Accept: application/json
     "full_name": "Nuevo Usuario",
     "email": "nuevo2@espol.edu.ec",
     "password": "password123"
+}
+
+### Iniciar Sesión (Obtener Token)
+POST {{baseUrl}}/login
+Content-Type: application/json
+Accept: application/json
+
+{
+    "email": "diego@espol.edu.ec",
+    "password": "12345678"
+
+}
+
+### Inscribirme a un evento
+POST {{baseUrl}}/events/5/register
+Authorization: Bearer 9|u68pwe0ZnggaOyJo3qd6SHbe4R6LclHnPtIFYcyw07b886c8
+Accept: application/json
+
+### Crear evento
+POST {{baseUrl}}/events
+Authorization: Bearer 9|u68pwe0ZnggaOyJo3qd6SHbe4R6LclHnPtIFYcyw07b886c8
+Content-Type: application/json
+Accept: application/json
+
+{
+    "title": "Workshop de Seguridad ESPOL",
+    "description": "Prácticas de hacking ético.",
+    "location": "Laboratorio 2",
+    "start_time": "2026-03-10 10:00:00",
+    "end_time": "2026-03-10 14:00:00",
+    "category_id": 1,
+    "type": "CERRADO",
+    "max_capacity": 20
 }

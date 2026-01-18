@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Event extends Model
 {
     protected $fillable = [
+        'user_id',
         'title',
-        'description', 
+        'description',
         'location',
         'start_time',
         'end_time',
@@ -17,6 +18,11 @@ class Event extends Model
         'type',
         'max_capacity',
         'available_spots'
+    ];
+
+    protected $casts = [
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
     ];
     public function registrations()
     {
@@ -26,5 +32,9 @@ class Event extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+    public function organizer()
+    {   // usanos 'user_id' porque no repetamos la convencion de nombre
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

@@ -25,4 +25,10 @@ class User extends Authenticatable
     protected $casts = [
         'password' => 'hashed',
     ];
+
+    public function events()
+    {
+        // Un usuario puede organizar muchos eventos
+        return $this->hasMany(Event::class);
+    }
 }
