@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { Header } from './components/Header';
+import { CreateEvent } from './components/CreateEvent';
 import { EventCatalog } from './components/EventCatalog';
 import { EventDetails } from './components/EventDetails';
 import { mockEvents, getEventById } from './utils/mockData';
 
 export default function App() {
+  const [currentView, setCurrentView] = useState<'catalog' | 'create'>('catalog');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   const selectedEvent = selectedEventId ? getEventById(selectedEventId) : null;
@@ -17,15 +20,16 @@ export default function App() {
   };
 
   return (
+
     <div className="min-h-screen bg-[var(--color-background)]">
-      <header className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-[var(--color-primary)]">EventHub</h1>
-        </div>
-      </header>
+      <Header currentView={currentView} onViewChange={setCurrentView} />
 
       <main>
-        <EventCatalog events={mockEvents} onViewDetails={handleViewDetails} />
+         {currentView === 'catalog' ? (
+          <EventCatalog events={mockEvents} onViewDetails={handleViewDetails} />
+        ) : (
+          <CreateEvent />
+        )}
       </main>
 
       {selectedEvent && (
