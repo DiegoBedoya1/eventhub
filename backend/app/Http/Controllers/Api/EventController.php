@@ -33,13 +33,13 @@ class EventController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'required|string', 
-            'location' => 'required|string',    
+            'description' => 'required|string',
+            'location' => 'required|string',
             'category_id' => 'required|exists:categories,id',
             'type' => 'required|in:ABIERTO,CERRADO',
             'max_capacity' => 'required|integer|min:1',
             'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time', 
+            'end_time' => 'required|date|after:start_time',
         ]);
         // cupos disponibles igual a la capacidad máxima
         $validated['available_spots'] = $validated['max_capacity'];
@@ -51,47 +51,45 @@ class EventController extends Controller
     // (POST /api/events/{id}/register)
     public function register(Request $request, $id)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'full_name' => 'required'
-        ]);
+        // 1. Obtenemos el usuario directamente del Token
+        $user = $request->user();
 
-        return DB::transaction(function () use ($request, $id) {
+        return DB::transaction(function () use ($user, $id) {
 
-            // A. Buscar o crear usuario
-            $user = User::firstOrCreate(
-                ['email' => $request->email],
-                ['full_name' => $request->full_name]
-            );
-
-
+            // 2. Buscar el evento y bloquear la fila para evitar "Race Conditions"
             $event = Event::lockForUpdate()->findOrFail($id);
 
-            //  ¿Hay cupos? 
+            // 3. ¿Hay cupos? (Solo si el evento es CERRADO)
             if ($event->type === 'CERRADO' && $event->available_spots <= 0) {
                 return response()->json(['message' => 'No hay cupos disponibles'], 409);
             }
 
-            // Verificar si ya está registrado
-            if (Registration::where('user_id', $user->id)->where('event_id', $event->id)->exists()) {
-                return response()->json(['message' => 'Ya estás registrado'], 422);
+            // 4. Verificar si el usuario ya está registrado usando el ID del Token
+            $alreadyRegistered = Registration::where('user_id', $user->id)
+                ->where('event_id', $event->id)
+                ->exists();
+
+            if ($alreadyRegistered) {
+                return response()->json(['message' => 'Ya estás registrado en este evento'], 422);
             }
 
-            //  Registrar
+            // 5. Crear la inscripción
             Registration::create([
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'status' => 'CONFIRMED'
             ]);
 
-            // restar cupo (Solo si es cerrado) 
+            // 6. Restar cupo si aplica
             if ($event->type === 'CERRADO') {
                 $event->decrement('available_spots');
             }
 
             return response()->json([
-                'message' => '¡Registro Exitoso!', //  
-                'cupos_restantes' => $event->available_spots
+                'message' => '¡Inscripción exitosa!',
+                'user' => $user->full_name,
+                'event' => $event->title,
+                'available_spots' => $event->available_spots
             ]);
         });
     }

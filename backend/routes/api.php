@@ -7,9 +7,14 @@ Route::get('/events', [EventController::class, 'index']);
 Route::post('/events', [EventController::class, 'store']);      
 
 Route::get('/events/{id}', [EventController::class, 'show']);   
-Route::post('/events/{id}/register', [EventController::class, 'register']); 
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/events/{id}/register', [EventController::class, 'register']);
+});
+
 Route::get('/events/{id}/participants', [EventController::class, 'getParticipants']); 
 
 Route::delete('/events/{event_id}/cancel', [EventController::class, 'cancelRegistration']);
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);

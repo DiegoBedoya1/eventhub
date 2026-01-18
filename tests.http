@@ -49,3 +49,15 @@ Accept: application/json
 {
     "email": "diego@espol.edu.ec"
 }
+
+### Registro de cuenta (Crear Usuario en el sistema)
+# Este es el que te devuelve el token para el login
+POST {{baseUrl}}/register
+Content-Type: application/json
+Accept: application/json
+
+{
+    "full_name": "Nuevo Usuario",
+    "email": "nuevo2@espol.edu.ec",
+    "password": "password123"
+}
