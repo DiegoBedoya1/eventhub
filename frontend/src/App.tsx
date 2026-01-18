@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Header } from './components/Header';
+import { CreateEvent } from './components/CreateEvent';
 import { EventCatalog } from './components/EventCatalog';
 import { EventDetails } from './components/EventDetails';
 import { mockEvents, getEventById } from './utils/mockData';
@@ -24,7 +25,11 @@ export default function App() {
       <Header currentView={currentView} onViewChange={setCurrentView} />
 
       <main>
-        <EventCatalog events={mockEvents} onViewDetails={handleViewDetails} />
+         {currentView === 'catalog' ? (
+          <EventCatalog events={mockEvents} onViewDetails={handleViewDetails} />
+        ) : (
+          <CreateEvent />
+        )}
       </main>
 
       {selectedEvent && (
