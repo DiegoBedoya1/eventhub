@@ -1,5 +1,5 @@
 @baseUrl = http://127.0.0.1:8000/api
-@event = 25
+@event =27
 @token = 9|u68pwe0ZnggaOyJo3qd6SHbe4R6LclHnPtIFYcyw07b886c8
 
 ### Listar todos los eventos (Catálogo)

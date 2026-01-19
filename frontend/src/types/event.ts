@@ -11,6 +11,7 @@ export interface Event {
   available_spots: number;
   category: { id: number; name: string };
   type: string;
+  participants?: { id: number; full_name: string; email: string }[];
 }
 
 export interface EventDetail {

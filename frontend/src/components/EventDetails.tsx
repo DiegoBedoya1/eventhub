@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Calendar, Clock, MapPin, User, Info, Users, LockOpen } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Calendar, Clock, MapPin, User, Info, Users, LockOpen, LogOut, CheckCircle } from 'lucide-react';
 import { EventDetail } from '../types/event';
 
 interface EventDetailsProps {
@@ -8,63 +8,140 @@ interface EventDetailsProps {
 }
 
 export function EventDetails({ event, onClose }: EventDetailsProps) {
+  // Estados de carga separados para no bloquear toda la UI
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
   
-  // Lógica de evento Abierto/Cerrado
+  const [amIRegistered, setAmIRegistered] = useState(false);
+
+  // Inicializamos con tipos explícitos <number> para evitar errores de TS
+  const [currentSpots, setCurrentSpots] = useState<number>(event.cupos_disponibles);
+  const [currentInscritos, setCurrentInscritos] = useState<number>(event.inscritos);
+
   const isOpen = event.tipo === 'ABIERTO';
-  const porcentaje = !isOpen && event.capacidad_maxima > 0 
-    ? (event.inscritos / event.capacidad_maxima) * 100 
-    : 0;
 
+  // 1. CARGA INICIAL: Verificar si estoy inscrito
+  useEffect(() => {
+    let isMounted = true; // Para evitar actualizaciones si se cierra el modal
+    console.log("FETCH DESDE USE EFFECT");
+
+    const checkRegistration = async () => {
+      const userId = localStorage.getItem('user_id');
+      const token = localStorage.getItem('token');
+
+      if (!userId || !token) return;
+
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/api/events/${event.id}/participants`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (isMounted && data.participants) {
+            const isRegistered = data.participants.some((p: any) => p.id === Number(userId));
+            setAmIRegistered(isRegistered);
+            // Sincronizamos inscritos reales
+            setCurrentInscritos(data.total_participants || 0);
+          }
+        }
+      } catch (error) {
+        console.error("Error verificando estado:", error);
+      }
+    };
+
+    checkRegistration();
+    return () => { isMounted = false; };
+  }, [event.id]);
+
+  // 2. ACCIÓN: INSCRIBIRSE
   const handleRegister = async () => {
-    const token = localStorage.getItem('token'); 
-
-    if (!token) {
-      // 1. ALERT NATIVO: Si no hay token
-      alert("Debes iniciar sesión para poder registrarte.");
-      return;
-    }
+    const token = localStorage.getItem('token');
+    if (!token) return alert("Debes iniciar sesión para inscribirte.");
 
     setIsRegistering(true);
-
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/events/${event.id}/register`, {
+      
+      const res = await fetch(`http://127.0.0.1:8000/api/events/${event.id}/register`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        },
-        body: JSON.stringify({}) 
+        }
       });
+      const data = await res.json();
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // 2. ALERT NATIVO: Éxito
-        // El navegador pausa aquí hasta que el usuario da click en "Aceptar"
-        alert(data.message || "¡Te has registrado correctamente!");
-        
-        // Al cerrar el alert, cerramos el modal automáticamente
-        onClose(); 
+      if (res.ok) {
+        alert("¡Inscripción exitosa!");
+        setAmIRegistered(true);
+        if (!isOpen) {
+          setCurrentInscritos(prev => prev + 1);
+          setCurrentSpots(prev => prev - 1);
+        }
       } else {
-        // 3. ALERT NATIVO: Error del backend (ej: "Ya registrado")
-        alert(data.message || "No se pudo completar el registro.");
+        alert(data.message || "No se pudo realizar la inscripción.");
       }
-
     } catch (error) {
-      // 4. ALERT NATIVO: Error de red
-      alert("Error de conexión con el servidor. Intenta más tarde.");
-      console.error(error);
+      alert("Error de conexión. Inténtalo más tarde.");
     } finally {
       setIsRegistering(false);
     }
   };
 
+  // 3. ACCIÓN: CANCELAR
+  const handleCancel = async () => {
+    const token = localStorage.getItem('token');
+    if (!confirm("¿Estás seguro de que deseas cancelar tu asistencia?")) return;
+
+    setIsCanceling(true);
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/events/${event.id}/cancel`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Tu asistencia ha sido cancelada.");
+        setAmIRegistered(false);
+        
+        // Actualizamos cupos con el dato exacto del backend si existe
+        if (typeof data.available_spots === 'number') {
+          setCurrentSpots(data.available_spots);
+          // Recalculamos inscritos basándonos en la capacidad máxima
+          const max = Number(event.capacidad_maxima) || 0;
+          setCurrentInscritos(max - data.available_spots);
+        } else if (!isOpen) {
+           // Fallback manual si el backend no devuelve el dato
+           setCurrentInscritos(prev => Math.max(0, prev - 1));
+           setCurrentSpots(prev => prev + 1);
+        }
+      } else {
+        alert(data.message || "Error al cancelar la asistencia.");
+      }
+    } catch (error) {
+      alert("Error de conexión al cancelar.");
+    } finally {
+      setIsCanceling(false);
+    }
+  };
+
+  // Cálculo visual de la barra
+  const porcentaje = !isOpen && event.capacidad_maxima > 0
+    ? (currentInscritos / event.capacidad_maxima) * 100
+    : 0;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
-        
+
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-start z-10">
           <div>
@@ -76,14 +153,14 @@ export function EventDetails({ event, onClose }: EventDetailsProps) {
                 {event.tipo}
               </span>
               {isOpen && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium border border-green-200">
-                    <LockOpen className="w-3 h-3" />
-                    Entrada Libre
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium border border-green-200">
+                  <LockOpen className="w-3 h-3" />
+                  Entrada Libre
+                </span>
+              )}
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
           >
@@ -92,7 +169,7 @@ export function EventDetails({ event, onClose }: EventDetailsProps) {
         </div>
 
         <div className="p-8 space-y-8">
-          {/* Info Grid */}
+          {/* Info Grid (Iconos) */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
               <Calendar className="w-6 h-6 text-[var(--color-secondary)] mt-1" />
@@ -135,18 +212,8 @@ export function EventDetails({ event, onClose }: EventDetailsProps) {
             </p>
           </div>
 
-          {/* Estado de Cupos */}
-          {isOpen ? (
-            <div className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center gap-4">
-              <div className="bg-green-100 p-2 rounded-full">
-                <LockOpen className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <p className="font-bold text-green-800">Evento de Cupos Ilimitados</p>
-                <p className="text-sm text-green-700">Regístrate para confirmar tu participación.</p>
-              </div>
-            </div>
-          ) : (
+          {/* Estado de Cupos Visual */}
+          {!isOpen && (
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 text-blue-900 font-semibold">
@@ -154,37 +221,67 @@ export function EventDetails({ event, onClose }: EventDetailsProps) {
                   <span>Estado de cupos</span>
                 </div>
                 <span className="text-blue-700 font-medium">
-                  {event.inscritos} / {event.capacidad_maxima} inscritos
+                  {currentInscritos} / {event.capacidad_maxima} inscritos
                 </span>
               </div>
               <div className="w-full bg-blue-200 rounded-full h-2.5 overflow-hidden">
-                <div 
+                <div
                   className="bg-blue-600 h-full rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(porcentaje, 100)}%` }}
                 />
               </div>
               <p className="text-sm text-blue-600 mt-3 text-center">
-                {event.cupos_disponibles > 0 
-                  ? `¡Quedan ${event.cupos_disponibles} lugares disponibles!` 
+                {currentSpots > 0
+                  ? `¡Quedan ${currentSpots} lugares disponibles!`
                   : 'Evento lleno'}
               </p>
             </div>
           )}
 
-          {/* Botón de Acción */}
+          {/* BOTONES DE ACCIÓN: Aquí decidimos qué botón mostrar */}
           <div className="pt-4 flex gap-4">
-            <button
-              onClick={handleRegister}
-              disabled={(!isOpen && event.cupos_disponibles === 0) || isRegistering}
-              className={`flex-1 text-white py-4 rounded-xl font-semibold text-lg shadow-lg transition-all 
-                ${(!isOpen && event.cupos_disponibles === 0)
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-[var(--color-secondary)] hover:bg-[var(--color-primary)]'
-                }
-                disabled:opacity-70`}
-            >
-              {isRegistering ? 'Procesando...' : 'Confirmar Asistencia'}
-            </button>
+            
+            {amIRegistered ? (
+              // === CASO 1: YA ESTOY REGISTRADO (Botón Rojo) ===
+              <button
+                onClick={handleCancel}
+                disabled={isCanceling}
+                className="flex-1 bg-red-50 text-red-600 border border-red-200 py-4 rounded-xl font-bold text-lg hover:bg-red-100 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isCanceling ? (
+                   <span>Procesando...</span>
+                ) : (
+                   <>
+                     <LogOut className="w-5 h-5" />
+                     Cancelar mi Asistencia
+                   </>
+                )}
+              </button>
+            ) : (
+              // === CASO 2: NO ESTOY REGISTRADO (Botón Principal) ===
+              <button
+                onClick={handleRegister}
+                disabled={(!isOpen && currentSpots === 0) || isRegistering}
+                className={`flex-1 text-white py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2
+                  ${(!isOpen && currentSpots === 0) 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-[var(--color-secondary)] hover:bg-[var(--color-primary)] cursor-pointer'
+                  }
+                  disabled:opacity-70`}
+              >
+                {isRegistering ? (
+                  <span>Inscribiendo...</span>
+                ) : (
+                  (!isOpen && currentSpots === 0) ? 'Sin Cupos' : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      Inscribirme al Evento
+                    </>
+                  )
+                )}
+              </button>
+            )}
+
           </div>
         </div>
       </div>

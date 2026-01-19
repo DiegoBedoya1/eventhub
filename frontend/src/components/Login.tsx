@@ -32,6 +32,7 @@ export default function Login() {
       localStorage.setItem('token', data.access_token || data.token);
       localStorage.setItem('name', data.user.full_name);
       localStorage.setItem('is_admin', String(data.user.is_admin));
+      localStorage.setItem('user_id', data.user.id); // <--- AGREGA ESTO
 
       toast.success('Welcome back');
       navigate('/');
