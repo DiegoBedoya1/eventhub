@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 
 export function Header() {
   const navigate = useNavigate();
-
+  const isAdmin = localStorage.getItem('is_admin') === '1';
+  const name  = localStorage.getItem('name');
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('is_admin');
     navigate('/login');
   };
 
@@ -23,6 +25,10 @@ export function Header() {
                 Gestión de eventos académicos y sociales
               </p>
             </div>
+            <div>
+              <h2 className="p-8 text-white">Hola: {name}</h2>
+      
+            </div>
           </div>
 
           <nav className="flex gap-2">
@@ -33,20 +39,15 @@ export function Header() {
               <Calendar className="w-5 h-5" />
               Catálogo
             </Link>
-            <Link
-              to="/create-event"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all bg-[var(--color-secondary)] text-white hover:bg-[var(--color-espol-blue)]"
-            >
-              <PlusCircle className="w-5 h-5" />
-              Crear Evento
-            </Link>
-            <Link
-              to="/profile"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all bg-[var(--color-secondary)] text-white hover:bg-[var(--color-espol-blue)]"
-            >
-              <User className="w-5 h-5" />
-              Perfil
-            </Link>
+            {localStorage.getItem('is_admin') === '1' && (
+              <Link
+                to="/create-event"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all bg-[var(--color-secondary)] text-white hover:bg-[var(--color-espol-blue)]"
+              >
+                <PlusCircle className="w-5 h-5" />
+                Crear Evento
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all bg-[var(--color-secondary)] text-white hover:bg-[var(--color-espol-blue)]"

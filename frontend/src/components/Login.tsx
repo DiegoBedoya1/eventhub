@@ -14,18 +14,29 @@ export default function Login() {
     try {
       const res = await fetch('http://127.0.0.1:8000/api/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json' // <--- AGREGA ESTA LÍNEA
+        },
         body: JSON.stringify({ email, password }),
       });
 
-      if (!res.ok) throw new Error('Invalid credentials');
-
       const data = await res.json();
-      localStorage.setItem('token', data.token);
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Invalid credentials');
+      }
+
+      // OJO: Verifica si tu backend devuelve "data.token" o "data.access_token"
+      // Según lo que vimos en el registro, suele ser "access_token"
+      localStorage.setItem('token', data.access_token || data.token);
+      localStorage.setItem('name', data.user.full_name);
+      localStorage.setItem('is_admin', String(data.user.is_admin));
+
       toast.success('Welcome back');
       navigate('/');
-    } catch {
-      toast.error('Email or password incorrect');
+    } catch (error: any) {
+      toast.error(error.message || 'Email or password incorrect');
     } finally {
       setLoading(false);
     }

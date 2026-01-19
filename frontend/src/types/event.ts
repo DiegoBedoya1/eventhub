@@ -10,7 +10,7 @@ export interface Event {
   max_capacity: number;
   available_spots: number;
   category: { id: number; name: string };
-  // ... otros campos crudos
+  type: string;
 }
 
 export interface EventDetail {
