@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Toaster, toast } from 'sonner';
 
@@ -8,16 +8,6 @@ export default function Register() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
-
-    type RegisterSuccessResponse = {
-        access_token: string;
-        user: {
-            full_name: string;
-            email: string;
-        };
-        message?: string;
-        errors?: Record<string, string[]>;
-    };
 
     const navigate = useNavigate();
 
@@ -30,6 +20,8 @@ export default function Register() {
         }
 
         setLoading(true);
+
+        let data: any = null;
 
         try {
             const response = await fetch('http://127.0.0.1:8000/api/register', {
@@ -46,32 +38,40 @@ export default function Register() {
                 }),
             });
 
-            const data: RegisterSuccessResponse = await response.json();
+            // Parseo seguro del JSON
+            try {
+                data = await response.json();
+            } catch {
+                data = null;
+            }
 
             if (!response.ok) {
                 const message = data?.errors
-                    ? Object.values(data.errors)[0][0]
+                    ? (Object.values(data.errors)[0] as string[])[0]
                     : data?.message || 'Error al crear la cuenta';
                 throw new Error(message);
             }
 
-            localStorage.setItem('token', data.access_token);
-            localStorage.setItem('user_name', data.user.full_name);
+            // Guardar sesión
+            localStorage.setItem('token', data.access_token || data.token);
+            localStorage.setItem('name', data.user.full_name);
+            localStorage.setItem('is_admin', String(data.user.is_admin));
+            localStorage.setItem('user_id', data.user.id); // <--- AGREGA ESTO
 
             toast.success('Cuenta creada exitosamente');
             navigate('/');
         } catch (error: any) {
-            toast.error(error.message || 'Error de red');
+            toast.error(error.message || 'Error de conexión');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+        <div className="min-h-screen flex items-center justify-center ">
             <Toaster />
 
-            <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl p-8">
+            <div className="w-full max-w-[420px]  rounded-2xl shadow-xl p-8">
                 <h1 className="text-3xl font-bold text-center text-gray-900">
                     Crear cuenta
                 </h1>
@@ -136,9 +136,11 @@ export default function Register() {
                         type="submit"
                         disabled={loading}
                         className="
-              w-full py-2 rounded-md
-              bg-indigo-600 text-white font-medium
+              w-full py-3 rounded-lg
+              bg-indigo-600 text-black font-bold
               hover:bg-indigo-700
+              shadow-lg shadow-indigo-500/30
+              transition-all
               disabled:opacity-60
             "
                     >

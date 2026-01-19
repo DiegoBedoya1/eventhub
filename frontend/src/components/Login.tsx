@@ -32,7 +32,7 @@ export default function Login() {
       localStorage.setItem('token', data.access_token || data.token);
       localStorage.setItem('name', data.user.full_name);
       localStorage.setItem('is_admin', String(data.user.is_admin));
-      localStorage.setItem('user_id', data.user.id); // <--- AGREGA ESTO
+      localStorage.setItem('user_id', data.user.id); 
 
       toast.success('Welcome back');
       navigate('/');
@@ -47,7 +47,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
       <Toaster />
 
-      <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl p-8">
+      <div className="w-full max-w-[420px]  rounded-2xl shadow-xl p-8">
         <h1 className="text-3xl font-bold text-center text-gray-900">
           Bienvenido a EventHub
         </h1>
@@ -114,15 +114,16 @@ export default function Login() {
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            ¿No tienes cuenta?{' '}
-            <span
+          <div className="text-center mt-6">
+            <p className="text-sm text-gray-500 mb-2">¿No tienes cuenta?</p>
+            <button
+              type="button"
               onClick={() => navigate('/register')}
-              className="text-indigo-600 cursor-pointer hover:underline"
+              className="w-full py-2 px-4 bg-indigo-600 text-black font-big rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
             >
-              Crear cuenta
-            </span>
-          </p>
+              Crear una cuenta nueva
+            </button>
+          </div>
 
         </form>
       </div>

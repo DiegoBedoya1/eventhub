@@ -7,7 +7,7 @@ GET {{baseUrl}}/events
 Accept: application/json
 
 ### evento especifico
-GET {{baseUrl}}/events/{{{{event}}}}
+GET {{baseUrl}}/events/{{event}}
 Accept: application/json
 
 ### Crear un nuevo evento (Organizar Evento)
@@ -98,3 +98,7 @@ Accept: application/json
     "type": "ABIERTO",
     "max_capacity": 80
 }
+### Inscribirme a un evento
+GET {{baseUrl}}/myevents
+Authorization: Bearer 9|u68pwe0ZnggaOyJo3qd6SHbe4R6LclHnPtIFYcyw07b886c8
+Accept: application/json

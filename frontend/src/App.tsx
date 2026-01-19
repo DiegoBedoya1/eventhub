@@ -9,6 +9,7 @@ import Profile from './components/Profile';
 import Register from './components/Register';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Event, EventDetail } from './types/event';
+import { MyEvents } from './components/MyEvents';
 
 export default function App() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -46,7 +47,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-[var(--color-background)]">
+    <div className="">
       {showHeaderAndFooter && <Header />}
       <main>
         <Routes>
@@ -61,6 +62,10 @@ export default function App() {
             <Route
               path="/create-event"
               element={<CreateEvent onEventCreated={fetchEvents} />}
+            />
+            <Route
+              path="/my-events"
+              element={<MyEvents />}
             />
             <Route path="/profile" element={<Profile />} />
           </Route>
