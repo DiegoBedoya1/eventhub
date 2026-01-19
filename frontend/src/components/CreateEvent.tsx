@@ -1,37 +1,33 @@
 import { useState } from 'react';
-import { CheckCircle, AlertCircle, Calendar, Clock, MapPin, Users, FileText, Tag } from 'lucide-react';
+import { CheckCircle, AlertCircle, Calendar, Clock, MapPin, Users, FileText, Tag, Lock } from 'lucide-react';
 
+// Mapeo de categorías (Asegúrate de que estos IDs coincidan con tu base de datos)
 const categoryMap: Record<string, number> = {
   'Académico': 1,
   'Social': 2,
 };
+
 interface CreateEventProps {
   onEventCreated?: () => void;
 }
 
+export function CreateEvent({ onEventCreated }: CreateEventProps) {
 
-export function CreateEvent({ onEventCreated }: CreateEventProps) { 
-  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'Académico' as 'Académico' | 'Social' ,
+    category: 'Académico' as 'Académico' | 'Social',
+    type: 'ABIERTO' as 'ABIERTO' | 'CERRADO', // Nuevo campo requerido
     date: '',
     startTime: '',
     endTime: '',
     location: '',
-    capacity: '',
-    organizer: '',
-    requirements: ''
+    capacity: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-
-  const categories: Array<'Académico' | 'Social'> = [
-    'Académico',
-    'Social',
-  ];
+  const [isLoading, setIsLoading] = useState(false);
 
   const locations = [
     'Auditorio Principal',
@@ -49,53 +45,30 @@ export function CreateEvent({ onEventCreated }: CreateEventProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'El título es obligatorio';
-    }
+    if (!formData.title.trim()) newErrors.title = 'El título es obligatorio';
+    if (!formData.description.trim()) newErrors.description = 'La descripción es obligatoria';
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'La descripción es obligatoria';
-    } else if (formData.description.length < 20) {
-      newErrors.description = 'La descripción debe tener al menos 20 caracteres';
-    }
-
-    if (!formData.date) {
-      newErrors.date = 'La fecha es obligatoria';
-    } else {
+    if (!formData.date) newErrors.date = 'La fecha es obligatoria';
+    else {
       const eventDate = new Date(formData.date);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      if (eventDate < today) {
-        newErrors.date = 'La fecha no puede ser en el pasado';
-      }
+      if (eventDate < today) newErrors.date = 'La fecha no puede ser en el pasado';
     }
 
-    if (!formData.startTime) {
-      newErrors.startTime = 'La hora de inicio es obligatoria';
-    }
-
-    if (!formData.endTime) {
-      newErrors.endTime = 'La hora de fin es obligatoria';
-    }
+    if (!formData.startTime) newErrors.startTime = 'Hora inicio obligatoria';
+    if (!formData.endTime) newErrors.endTime = 'Hora fin obligatoria';
 
     if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
-      newErrors.endTime = 'La hora de fin debe ser posterior a la hora de inicio';
+      newErrors.endTime = 'La hora fin debe ser después del inicio';
     }
 
-    if (!formData.location) {
-      newErrors.location = 'La ubicación es obligatoria';
-    }
+    if (!formData.location) newErrors.location = 'La ubicación es obligatoria';
 
     if (!formData.capacity) {
-      newErrors.capacity = 'La capacidad es obligatoria';
+      newErrors.capacity = 'Capacidad obligatoria';
     } else if (parseInt(formData.capacity) < 1) {
-      newErrors.capacity = 'La capacidad debe ser al menos 1';
-    } else if (parseInt(formData.capacity) > 500) {
-      newErrors.capacity = 'La capacidad máxima es 500 personas';
-    }
-
-    if (!formData.organizer.trim()) {
-      newErrors.organizer = 'El organizador es obligatorio';
+      newErrors.capacity = 'Mínimo 1 persona';
     }
 
     setErrors(newErrors);
@@ -104,43 +77,31 @@ export function CreateEvent({ onEventCreated }: CreateEventProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
-    // 1. Preparar las fechas para Laravel (Y-m-d H:i:s)
-    const formattedStartTime = `${formData.date} ${formData.startTime}:00`;
-    const formattedEndTime = `${formData.date} ${formData.endTime}:00`;
+    setIsLoading(true);
 
-    // 2. Unir requisitos a la descripción (ya que no creamos columna requisitos en la BD)
-    const fullDescription = formData.requirements 
-      ? `${formData.description}\n\nRequisitos: ${formData.requirements}`
-      : formData.description;
-
-    // 3. Crear el payload exacto que espera tu EventController@store
+    // 1. Construcción del Payload exacto para Laravel
     const payload = {
       title: formData.title,
-      description: fullDescription,
+      description: formData.description,
       location: formData.location,
-      category_id: categoryMap[formData.category], // Convertimos string a ID
-      type: 'ABIERTO', // O puedes agregar un select en el form para esto
-      max_capacity: parseInt(formData.capacity),
-      start_time: formattedStartTime,
-      end_time: formattedEndTime,
-      // ¡OJO! No enviamos user_id ni organizer (texto). 
-      // Laravel usa el usuario logueado como organizador.
+      start_time: `${formData.date} ${formData.startTime}:00`, // Formato SQL
+      end_time: `${formData.date} ${formData.endTime}:00`,     // Formato SQL
+      category_id: categoryMap[formData.category],
+      type: formData.type,
+      max_capacity: parseInt(formData.capacity)
     };
 
     try {
-      // 4. Petición al Backend
-      // Asumimos que guardaste el token en localStorage al hacer login
-      const token = localStorage.getItem('auth_token'); 
+      const token = localStorage.getItem('token');
 
       const response = await fetch('http://127.0.0.1:8000/api/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': `Bearer ${token}` // Clave para que Laravel sepa quién eres
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
@@ -148,73 +109,49 @@ export function CreateEvent({ onEventCreated }: CreateEventProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        // Manejo de errores de validación de Laravel (422)
         if (response.status === 422) {
-          // Podrías mapear los errores del servidor al estado setErrors aquí
-          console.error("Errores de validación:", data.errors);
-          alert("Error de validación: Revisa los datos ingresados.");
+          console.error("Validation Errors:", data.errors);
+          alert("Error: Revisa los datos ingresados.");
         } else {
           throw new Error(data.message || 'Error al crear el evento');
         }
         return;
       }
 
-      // 5. Éxito
-      console.log('Evento creado en BD:', data);
       setSubmitted(true);
-      
-      // Notificar al padre (App.tsx) para que actualice el catálogo
-      if (onEventCreated) {
-        onEventCreated();
-      }
+      if (onEventCreated) onEventCreated();
 
-      // Reset del formulario
+      // Reset
       setTimeout(() => {
         setFormData({
-          title: '',
-          description: '',
-          category: 'Académico',
-          date: '',
-          startTime: '',
-          endTime: '',
-          location: '',
-          capacity: '',
-          organizer: '',
-          requirements: ''
+          title: '', description: '', category: 'Académico', type: 'ABIERTO',
+          date: '', startTime: '', endTime: '', location: '', capacity: ''
         });
         setSubmitted(false);
       }, 3000);
 
     } catch (error) {
-      console.error("Error de red:", error);
-      alert("No se pudo conectar con el servidor.");
+      console.error(error);
+      alert("Error de conexión con el servidor.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleChange = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors({ ...errors, [field]: '' });
-    }
+    if (errors[field]) setErrors({ ...errors, [field]: '' });
   };
 
   if (submitted) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-green-200">
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-green-200 animate-in fade-in zoom-in">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-12 h-12 text-green-600" />
           </div>
-          <h2 className="text-green-900 mb-3">¡Evento creado exitosamente!</h2>
-          <p className="text-[var(--color-text-light)] mb-6">
-            Tu evento ha sido registrado y estará visible en el catálogo una vez sea aprobado.
-          </p>
-          <div className="bg-green-50 rounded-lg p-4 max-w-md mx-auto">
-            <p className="text-sm text-green-800">
-              Recibirás una notificación en tu correo institucional con los detalles de la aprobación.
-            </p>
-          </div>
+          <h2 className="text-green-900 mb-3 text-2xl font-bold">¡Evento creado exitosamente!</h2>
+          <p className="text-gray-500">Tu evento ha sido registrado en el sistema.</p>
         </div>
       </div>
     );
@@ -222,261 +159,150 @@ export function CreateEvent({ onEventCreated }: CreateEventProps) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-2xl shadow-lg p-8 border border-[var(--color-border)]">
-        <div className="mb-8">
-          <h2 className="mb-2">Crear nuevo evento</h2>
-          <p className="text-[var(--color-text-light)]">
-            Completa el formulario para registrar un nuevo evento en ESPOL
-          </p>
-        </div>
-
-        {/* Info Banner */}
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-1">Requisitos para crear un evento:</p>
-            <ul className="list-disc list-inside space-y-1 text-blue-700">
-              <li>El evento debe ser de carácter académico, social, deportivo o cultural</li>
-              <li>Debe contar con la aprobación de la facultad o departamento organizador</li>
-              <li>La capacidad debe ajustarse a los espacios disponibles en ESPOL</li>
-            </ul>
-          </div>
+      <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+        <div className="mb-8 border-b pb-4">
+          <h2 className="text-2xl font-bold text-gray-800">Crear nuevo evento</h2>
+          <p className="text-gray-500 mt-1">Ingresa los detalles oficiales del evento.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
+
+          {/* Título */}
           <div>
-            <label className="flex items-center gap-2 mb-2">
-              <FileText className="w-4 h-4 text-[var(--color-secondary)]" />
-              <span>Título del evento *</span>
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Título del evento</label>
             <input
               type="text"
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.title ? 'border-red-500' : 'border-[var(--color-border)]'
-                }`}
-              placeholder="Ej: Seminario de Inteligencia Artificial"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              placeholder="Ej: Integración de Novatos"
             />
-            {errors.title && (
-              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errors.title}
-              </p>
-            )}
+            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
           </div>
 
-          {/* Category */}
-          <div>
-            <label className="flex items-center gap-2 mb-2">
-              <Tag className="w-4 h-4 text-[var(--color-secondary)]" />
-              <span>Categoría *</span>
-            </label>
-            <select
-              value={formData.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-              className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] bg-white"
-            >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+          {/* Categoría y Tipo */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
+              <div className="relative">
+                <Tag className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <select
+                  value={formData.category}
+                  onChange={(e) => handleChange('category', e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                >
+                  <option value="Académico">Académico</option>
+                  <option value="Social">Social</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Evento</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <select
+                  value={formData.type}
+                  onChange={(e) => handleChange('type', e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                >
+                  <option value="ABIERTO">ABIERTO (Público)</option>
+                  <option value="CERRADO">CERRADO (Privado)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          {/* Description */}
+          {/* Descripción */}
           <div>
-            <label className="flex items-center gap-2 mb-2">
-              <FileText className="w-4 h-4 text-[var(--color-secondary)]" />
-              <span>Descripción *</span>
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
             <textarea
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
               rows={4}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] resize-none ${errors.description ? 'border-red-500' : 'border-[var(--color-border)]'
-                }`}
-              placeholder="Describe el evento, objetivos, actividades principales..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+              placeholder="Detalles del evento..."
             />
-            <div className="flex justify-between mt-1">
-              {errors.description ? (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.description}
-                </p>
-              ) : (
-                <p className="text-sm text-[var(--color-text-light)]">
-                  Mínimo 20 caracteres
-                </p>
-              )}
-              <p className="text-sm text-[var(--color-text-light)]">
-                {formData.description.length} caracteres
-              </p>
-            </div>
+            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
           </div>
 
-          {/* Date and Time */}
-          <div className="grid md:grid-cols-3 gap-4">
+          {/* Fechas y Horas */}
+          <div className="grid md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl">
             <div>
-              <label className="flex items-center gap-2 mb-2">
-                <Calendar className="w-4 h-4 text-[var(--color-secondary)]" />
-                <span>Fecha *</span>
-              </label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha</label>
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleChange('date', e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.date ? 'border-red-500' : 'border-[var(--color-border)]'
-                  }`}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
               />
-              {errors.date && (
-                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.date}
-                </p>
-              )}
+              {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
             </div>
-
             <div>
-              <label className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-[var(--color-secondary)]" />
-                <span>Hora inicio *</span>
-              </label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Hora Inicio</label>
               <input
                 type="time"
                 value={formData.startTime}
                 onChange={(e) => handleChange('startTime', e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.startTime ? 'border-red-500' : 'border-[var(--color-border)]'
-                  }`}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
               />
-              {errors.startTime && (
-                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.startTime}
-                </p>
-              )}
             </div>
-
             <div>
-              <label className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-[var(--color-secondary)]" />
-                <span>Hora fin *</span>
-              </label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Hora Fin</label>
               <input
                 type="time"
                 value={formData.endTime}
                 onChange={(e) => handleChange('endTime', e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.endTime ? 'border-red-500' : 'border-[var(--color-border)]'
-                  }`}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
               />
-              {errors.endTime && (
-                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.endTime}
-                </p>
-              )}
+              {errors.endTime && <p className="text-red-500 text-xs mt-1">{errors.endTime}</p>}
             </div>
           </div>
 
-          {/* Location and Capacity */}
+          {/* Ubicación y Capacidad */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="flex items-center gap-2 mb-2">
-                <MapPin className="w-4 h-4 text-[var(--color-secondary)]" />
-                <span>Ubicación *</span>
-              </label>
-              <select
-                value={formData.location}
-                onChange={(e) => handleChange('location', e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] bg-white ${errors.location ? 'border-red-500' : 'border-[var(--color-border)]'
-                  }`}
-              >
-                <option value="">Selecciona una ubicación</option>
-                {locations.map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
-                ))}
-              </select>
-              {errors.location && (
-                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.location}
-                </p>
-              )}
+              <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <select
+                  value={formData.location}
+                  onChange={(e) => handleChange('location', e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                >
+                  <option value="">Selecciona ubicación...</option>
+                  {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                </select>
+              </div>
+              {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
             </div>
 
             <div>
-              <label className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-[var(--color-secondary)]" />
-                <span>Capacidad *</span>
-              </label>
-              <input
-                type="number"
-                value={formData.capacity}
-                onChange={(e) => handleChange('capacity', e.target.value)}
-                min="1"
-                max="500"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.capacity ? 'border-red-500' : 'border-[var(--color-border)]'
-                  }`}
-                placeholder="Número máximo de asistentes"
-              />
-              {errors.capacity && (
-                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.capacity}
-                </p>
-              )}
+              <label className="block text-sm font-medium text-gray-700 mb-2">Capacidad Máxima</label>
+              <div className="relative">
+                <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <input
+                  type="number"
+                  value={formData.capacity}
+                  onChange={(e) => handleChange('capacity', e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="Ej: 80"
+                  min="1"
+                />
+              </div>
+              {errors.capacity && <p className="text-red-500 text-sm mt-1">{errors.capacity}</p>}
             </div>
           </div>
 
-          {/* Organizer */}
-          <div>
-            <label className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-[var(--color-secondary)]" />
-              <span>Organizador *</span>
-            </label>
-            <input
-              type="text"
-              value={formData.organizer}
-              onChange={(e) => handleChange('organizer', e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.organizer ? 'border-red-500' : 'border-[var(--color-border)]'
-                }`}
-              placeholder="Ej: Facultad de Ingeniería, Club de Ajedrez, etc."
-            />
-            {errors.organizer && (
-              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errors.organizer}
-              </p>
-            )}
-          </div>
+          {/* Botón Submit */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-indigo-600 text-black py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg disabled:opacity-70 flex items-center justify-center gap-2"
+          >
+            {isLoading ? 'Creando evento...' : <><CheckCircle className="w-5 h-5" /> Publicar Evento</>}
+          </button>
 
-          {/* Requirements (Optional) */}
-          <div>
-            <label className="flex items-center gap-2 mb-2">
-              <CheckCircle className="w-4 h-4 text-[var(--color-secondary)]" />
-              <span>Requisitos (opcional)</span>
-            </label>
-            <textarea
-              value={formData.requirements}
-              onChange={(e) => handleChange('requirements', e.target.value)}
-              rows={3}
-              className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] resize-none"
-              placeholder="Separa cada requisito con una coma. Ej: Laptop personal, Conocimientos de Python, Registro previo"
-            />
-            <p className="mt-1 text-sm text-[var(--color-text-light)]">
-              Separa múltiples requisitos con comas
-            </p>
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              className="flex-1 bg-[var(--color-secondary)] text-white py-3 rounded-lg hover:bg-[var(--color-primary)] transition-colors flex items-center justify-center gap-2"
-            >
-              <CheckCircle className="w-5 h-5" />
-              Crear evento
-            </button>
-          </div>
         </form>
       </div>
     </div>
