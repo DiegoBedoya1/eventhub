@@ -20,6 +20,7 @@ Abre el archivo php.ini y busca las siguientes líneas. Asegúrate de que no ten
 
 extension=pdo_sqlite
 extension=sqlite3
+Nota: en caso de no servir, ejecutar el comando: "npm install sqlite3" dentro de la carpeta backend.
 
 Inicia el serividor con:
 php artisan serve
