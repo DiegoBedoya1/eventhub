@@ -3,6 +3,9 @@ Proyecto para el curso de Lenguajes de Programacion
 
 ## Guia de instalacion
 Esta guia asume que se tiene una instalacion global de php y node.js
+## Importante
+El unico admin en la plataforma es 
+diego@espol.edu.ec, con contraseña 12345678
 
 ### Backend
 
