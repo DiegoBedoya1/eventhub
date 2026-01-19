@@ -7,7 +7,7 @@ GET {{baseUrl}}/events
 Accept: application/json
 
 ### evento especifico
-GET {{baseUrl}}/events/{{event}}
+GET {{baseUrl}}/events/{{{{event}}}}
 Accept: application/json
 
 ### Crear un nuevo evento (Organizar Evento)
@@ -89,12 +89,12 @@ Content-Type: application/json
 Accept: application/json
 
 {
-    "title": "Workshop de Seguridad ESPOL",
-    "description": "Prácticas de hacking ético.",
-    "location": "Laboratorio 2",
-    "start_time": "2026-03-10 10:00:00",
-    "end_time": "2026-03-10 14:00:00",
-    "category_id": 1,
-    "type": "CERRADO",
-    "max_capacity": 20
+    "title": "Integración de Novatos FCNM",
+    "description": "Evento social para conocer a los nuevos estudiantes de la facultad.",
+    "location": "Cafetería Central",
+    "start_time": "2026-01-23 13:00:00",
+    "end_time": "2026-01-23 16:00:00",
+    "category_id": 2,
+    "type": "ABIERTO",
+    "max_capacity": 80
 }

@@ -1,11 +1,21 @@
 import { useState } from 'react';
 import { CheckCircle, AlertCircle, Calendar, Clock, MapPin, Users, FileText, Tag } from 'lucide-react';
 
-export function CreateEvent() {
+const categoryMap: Record<string, number> = {
+  'Académico': 1,
+  'Social': 2,
+};
+interface CreateEventProps {
+  onEventCreated?: () => void;
+}
+
+
+export function CreateEvent({ onEventCreated }: CreateEventProps) { 
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'Académico' as 'Académico' | 'Social' | 'Deportivo' | 'Cultural',
+    category: 'Académico' as 'Académico' | 'Social' ,
     date: '',
     startTime: '',
     endTime: '',
@@ -18,11 +28,9 @@ export function CreateEvent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
 
-  const categories: Array<'Académico' | 'Social' | 'Deportivo' | 'Cultural'> = [
+  const categories: Array<'Académico' | 'Social'> = [
     'Académico',
     'Social',
-    'Deportivo',
-    'Cultural'
   ];
 
   const locations = [
@@ -94,15 +102,73 @@ export function CreateEvent() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (validateForm()) {
-      // In real app: save to database
-      console.log('Event created:', formData);
+    if (!validateForm()) return;
+
+    // 1. Preparar las fechas para Laravel (Y-m-d H:i:s)
+    const formattedStartTime = `${formData.date} ${formData.startTime}:00`;
+    const formattedEndTime = `${formData.date} ${formData.endTime}:00`;
+
+    // 2. Unir requisitos a la descripción (ya que no creamos columna requisitos en la BD)
+    const fullDescription = formData.requirements 
+      ? `${formData.description}\n\nRequisitos: ${formData.requirements}`
+      : formData.description;
+
+    // 3. Crear el payload exacto que espera tu EventController@store
+    const payload = {
+      title: formData.title,
+      description: fullDescription,
+      location: formData.location,
+      category_id: categoryMap[formData.category], // Convertimos string a ID
+      type: 'ABIERTO', // O puedes agregar un select en el form para esto
+      max_capacity: parseInt(formData.capacity),
+      start_time: formattedStartTime,
+      end_time: formattedEndTime,
+      // ¡OJO! No enviamos user_id ni organizer (texto). 
+      // Laravel usa el usuario logueado como organizador.
+    };
+
+    try {
+      // 4. Petición al Backend
+      // Asumimos que guardaste el token en localStorage al hacer login
+      const token = localStorage.getItem('auth_token'); 
+
+      const response = await fetch('http://127.0.0.1:8000/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}` // Clave para que Laravel sepa quién eres
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Manejo de errores de validación de Laravel (422)
+        if (response.status === 422) {
+          // Podrías mapear los errores del servidor al estado setErrors aquí
+          console.error("Errores de validación:", data.errors);
+          alert("Error de validación: Revisa los datos ingresados.");
+        } else {
+          throw new Error(data.message || 'Error al crear el evento');
+        }
+        return;
+      }
+
+      // 5. Éxito
+      console.log('Evento creado en BD:', data);
       setSubmitted(true);
       
-      // Reset form after 3 seconds
+      // Notificar al padre (App.tsx) para que actualice el catálogo
+      if (onEventCreated) {
+        onEventCreated();
+      }
+
+      // Reset del formulario
       setTimeout(() => {
         setFormData({
           title: '',
@@ -118,6 +184,10 @@ export function CreateEvent() {
         });
         setSubmitted(false);
       }, 3000);
+
+    } catch (error) {
+      console.error("Error de red:", error);
+      alert("No se pudo conectar con el servidor.");
     }
   };
 
@@ -184,9 +254,8 @@ export function CreateEvent() {
               type="text"
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${
-                errors.title ? 'border-red-500' : 'border-[var(--color-border)]'
-              }`}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.title ? 'border-red-500' : 'border-[var(--color-border)]'
+                }`}
               placeholder="Ej: Seminario de Inteligencia Artificial"
             />
             {errors.title && (
@@ -224,9 +293,8 @@ export function CreateEvent() {
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
               rows={4}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] resize-none ${
-                errors.description ? 'border-red-500' : 'border-[var(--color-border)]'
-              }`}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] resize-none ${errors.description ? 'border-red-500' : 'border-[var(--color-border)]'
+                }`}
               placeholder="Describe el evento, objetivos, actividades principales..."
             />
             <div className="flex justify-between mt-1">
@@ -257,9 +325,8 @@ export function CreateEvent() {
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleChange('date', e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${
-                  errors.date ? 'border-red-500' : 'border-[var(--color-border)]'
-                }`}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.date ? 'border-red-500' : 'border-[var(--color-border)]'
+                  }`}
               />
               {errors.date && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -278,9 +345,8 @@ export function CreateEvent() {
                 type="time"
                 value={formData.startTime}
                 onChange={(e) => handleChange('startTime', e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${
-                  errors.startTime ? 'border-red-500' : 'border-[var(--color-border)]'
-                }`}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.startTime ? 'border-red-500' : 'border-[var(--color-border)]'
+                  }`}
               />
               {errors.startTime && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -299,9 +365,8 @@ export function CreateEvent() {
                 type="time"
                 value={formData.endTime}
                 onChange={(e) => handleChange('endTime', e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${
-                  errors.endTime ? 'border-red-500' : 'border-[var(--color-border)]'
-                }`}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.endTime ? 'border-red-500' : 'border-[var(--color-border)]'
+                  }`}
               />
               {errors.endTime && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -322,9 +387,8 @@ export function CreateEvent() {
               <select
                 value={formData.location}
                 onChange={(e) => handleChange('location', e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] bg-white ${
-                  errors.location ? 'border-red-500' : 'border-[var(--color-border)]'
-                }`}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] bg-white ${errors.location ? 'border-red-500' : 'border-[var(--color-border)]'
+                  }`}
               >
                 <option value="">Selecciona una ubicación</option>
                 {locations.map(loc => (
@@ -350,9 +414,8 @@ export function CreateEvent() {
                 onChange={(e) => handleChange('capacity', e.target.value)}
                 min="1"
                 max="500"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${
-                  errors.capacity ? 'border-red-500' : 'border-[var(--color-border)]'
-                }`}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.capacity ? 'border-red-500' : 'border-[var(--color-border)]'
+                  }`}
                 placeholder="Número máximo de asistentes"
               />
               {errors.capacity && (
@@ -374,9 +437,8 @@ export function CreateEvent() {
               type="text"
               value={formData.organizer}
               onChange={(e) => handleChange('organizer', e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${
-                errors.organizer ? 'border-red-500' : 'border-[var(--color-border)]'
-              }`}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] ${errors.organizer ? 'border-red-500' : 'border-[var(--color-border)]'
+                }`}
               placeholder="Ej: Facultad de Ingeniería, Club de Ajedrez, etc."
             />
             {errors.organizer && (

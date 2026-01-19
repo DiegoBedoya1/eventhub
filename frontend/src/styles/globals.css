@@ -95,3 +95,11 @@ small {
   line-height: 1.5;
   color: var(--color-text-light);
 }
+
+@layer base {
+  input {
+    @apply border border-slate-300 rounded-md;
+  }
+}
+
+

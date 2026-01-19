@@ -28,7 +28,7 @@ class EventController extends Controller
         // Traemos el evento con su organizador y categoría
         $event = Event::with(['organizer', 'category'])->findOrFail($id);
 
-        // Formateamos para la vista 
+        // Formateamos para la vista de Salvador
         return response()->json([
             'id' => $event->id,
             'titulo' => $event->title,

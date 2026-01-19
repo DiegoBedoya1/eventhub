@@ -1,303 +1,116 @@
-import { useState } from "react";
-import {
-  X,
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
-  Building,
-  CheckCircle,
-  AlertCircle,
-  ArrowLeft,
-} from "lucide-react";
-import { Event } from "../types/event";
+import { X, Calendar, Clock, MapPin, User, Info, Users } from 'lucide-react';
+import { EventDetail } from '../types/event';
 
 interface EventDetailsProps {
-  event: Event;
+  event: EventDetail; // Usamos la interfaz en español
   onClose: () => void;
 }
 
-export function EventDetails({
-  event,
-  onClose,
-}: EventDetailsProps) {
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-  });
-
-  const attendancePercentage =
-    (event.attendees / event.capacity) * 100;
-  const isFull = event.attendees >= event.capacity;
-  const availableSpots = event.capacity - event.attendees;
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsRegistered(true);
-    setShowForm(false);
-    // In real app: save to database
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString + "T00:00:00");
-    return date.toLocaleDateString("es-ES", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+export function EventDetails({ event, onClose }: EventDetailsProps) {
+  const porcentaje = (event.inscritos / event.capacidad_maxima) * 100;
 
   return (
-    <div className="fixed inset-0 bg-[rgb(255,255,255)] bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] p-6 sticky top-0 z-10">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h2 className="text-white mb-2 font-[Acme] italic font-bold">
-                {event.title}
-              </h2>
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-black bg-white bg-opacity-20 px-3 py-1 rounded-full">
-                  {event.category}
-                </span>
-                {isFull && (
-                  <span className="bg-red-500 px-3 py-1 rounded-full flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    Evento lleno
-                  </span>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
+        
+        {/* Header con Título en Español */}
+        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-start z-10">
+          <div>
+            <h2 className="text-2xl font-bold text-[var(--color-text)]">
+              {event.titulo}
+            </h2>
+            <span className="inline-block mt-2 px-3 py-1 bg-[var(--color-secondary)]/10 text-[var(--color-secondary)] rounded-full text-sm font-medium">
+              {event.tipo}
+            </span>
           </div>
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X className="w-6 h-6 text-gray-400" />
+          </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          {/* Success Message */}
-          {isRegistered && (
-            <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+        <div className="p-8 space-y-8">
+          {/* Info Grid - Usamos los campos pre-formateados del backend */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+              <Calendar className="w-6 h-6 text-[var(--color-secondary)] mt-1" />
               <div>
-                <h4 className="text-green-900 mb-1">
-                  ¡Registro confirmado!
-                </h4>
-                <p className="text-sm text-green-700">
-                  Has confirmado tu asistencia a este evento.
-                  Recibirás un recordatorio antes del evento.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Event Info Grid */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            <div className="flex items-start gap-3 p-4 bg-[var(--color-espol-light)] rounded-lg">
-              <Calendar className="w-5 h-5 text-[var(--color-primary)] mt-0.5" />
-              <div>
-                <p className="text-sm text-[var(--color-text-light)]">
-                  Fecha
-                </p>
-                <p className="font-medium capitalize">
-                  {formatDate(event.date)}
-                </p>
+                <p className="font-semibold text-[var(--color-text)]">Fecha</p>
+                <p className="text-[var(--color-text-light)] capitalize">{event.fecha_visible}</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 bg-[var(--color-espol-light)] rounded-lg">
-              <Clock className="w-5 h-5 text-[var(--color-primary)] mt-0.5" />
+            <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+              <Clock className="w-6 h-6 text-[var(--color-secondary)] mt-1" />
               <div>
-                <p className="text-sm text-[var(--color-text-light)]">
-                  Horario
-                </p>
-                <p className="font-medium">
-                  {event.startTime} - {event.endTime}
-                </p>
+                <p className="font-semibold text-[var(--color-text)]">Horario</p>
+                <p className="text-[var(--color-text-light)]">{event.horario}</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 bg-[var(--color-espol-light)] rounded-lg">
-              <MapPin className="w-5 h-5 text-[var(--color-primary)] mt-0.5" />
+            <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+              <MapPin className="w-6 h-6 text-[var(--color-secondary)] mt-1" />
               <div>
-                <p className="text-sm text-[var(--color-text-light)]">
-                  Ubicación
-                </p>
-                <p className="font-medium">{event.location}</p>
+                <p className="font-semibold text-[var(--color-text)]">Ubicación</p>
+                <p className="text-[var(--color-text-light)]">{event.ubicacion}</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 bg-[var(--color-espol-light)] rounded-lg">
-              <Building className="w-5 h-5 text-[var(--color-primary)] mt-0.5" />
+            <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+              <User className="w-6 h-6 text-[var(--color-secondary)] mt-1" />
               <div>
-                <p className="text-sm text-[var(--color-text-light)]">
-                  Organizador
-                </p>
-                <p className="font-medium">{event.organizer}</p>
+                <p className="font-semibold text-[var(--color-text)]">Organizador</p>
+                <p className="text-[var(--color-text-light)]">{event.organizador}</p>
               </div>
             </div>
           </div>
 
-          {/* Description */}
-          <div className="mb-6">
-            <h3 className="mb-3">Descripción</h3>
-            <p className="text-[var(--color-text-light)] leading-relaxed">
-              {event.description}
+          {/* Descripción */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Info className="w-5 h-5 text-[var(--color-secondary)]" />
+              <h3 className="font-semibold text-lg">Acerca del evento</h3>
+            </div>
+            <p className="text-[var(--color-text-light)] leading-relaxed whitespace-pre-wrap">
+              {event.descripcion}
             </p>
           </div>
 
-          {/* Requirements */}
-          {event.requirements &&
-            event.requirements.length > 0 && (
-              <div className="mb-6">
-                <h3 className="mb-3">Requisitos</h3>
-                <ul className="space-y-2">
-                  {event.requirements.map((req, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-2"
-                    >
-                      <CheckCircle className="w-5 h-5 text-[var(--color-secondary)] mt-0.5 flex-shrink-0" />
-                      <span className="text-[var(--color-text-light)]">
-                        {req}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-          {/* Capacity */}
-          <div className="mb-6">
+          {/* Estado de Inscripción */}
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-[var(--color-primary)]" />
-                <h4>Capacidad</h4>
+              <div className="flex items-center gap-2 text-blue-900 font-semibold">
+                <Users className="w-5 h-5" />
+                <span>Estado de cupos</span>
               </div>
-              <span className="text-sm">
-                <span className="font-semibold text-[var(--color-primary)]">
-                  {event.attendees}
-                </span>
-                <span className="text-[var(--color-text-light)]">
-                  {" "}
-                  / {event.capacity}
-                </span>
+              <span className="text-blue-700 font-medium">
+                {event.inscritos} / {event.capacidad_maxima} inscritos
               </span>
             </div>
-            <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div
-                className={`h-full transition-all ${isFull
-                  ? "bg-red-500"
-                  : attendancePercentage >= 80
-                    ? "bg-yellow-500"
-                    : "bg-[var(--color-secondary)]"
-                  }`}
-                style={{
-                  width: `${Math.min(attendancePercentage, 100)}%`,
-                }}
+            <div className="w-full bg-blue-200 rounded-full h-2.5 overflow-hidden">
+              <div 
+                className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(porcentaje, 100)}%` }}
               />
             </div>
-            {!isFull && (
-              <p className="text-sm text-[var(--color-text-light)] mt-2">
-                {availableSpots}{" "}
-                {availableSpots === 1
-                  ? "cupo disponible"
-                  : "cupos disponibles"}
-              </p>
-            )}
+            <p className="text-sm text-blue-600 mt-3 text-center">
+              {event.cupos_disponibles > 0 
+                ? `¡Quedan ${event.cupos_disponibles} lugares disponibles!` 
+                : 'Evento lleno'}
+            </p>
           </div>
 
-          {/* boton aqui */}
-          {/* Registration Form */}
-          {showForm && !isRegistered && (
-            <div className="mb-6 border border-[var(--color-border)] rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h4>Confirmar asistencia</h4>
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="text-[var(--color-text-light)] hover:text-[var(--color-text)]"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-              </div>
-              <form
-                onSubmit={handleRegister}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block text-sm mb-1">
-                    Nombre completo
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        name: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)]"
-                    placeholder="Tu nombre"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1">
-                    Correo institucional
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        email: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)]"
-                    placeholder="tu.correo@espol.edu.ec"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-[var(--color-secondary)] text-white py-2 rounded-lg hover:bg-[var(--color-primary)] transition-colors"
-                >
-                  Confirmar asistencia
-                </button>
-              </form>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          {!showForm && !isRegistered && (
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowForm(true)}
-                disabled={isFull}
-                className={`flex-1 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                  isFull
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-[var(--color-secondary)] text-white hover:bg-[var(--color-primary)]"
-                }`}
-              >
-                <CheckCircle className="w-5 h-5" />
-                {isFull
-                  ? "Evento lleno"
-                  : "Confirmar asistencia"}
-              </button>
-            </div>
-          )}
-          
+          {/* Botón de Acción */}
+          <div className="pt-4 flex gap-4">
+             <button
+               disabled={event.cupos_disponibles === 0}
+               className="flex-1 bg-[var(--color-secondary)] text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:bg-[var(--color-primary)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+               {event.cupos_disponibles > 0 ? 'Confirmar Asistencia' : 'Sin Cupos'}
+             </button>
+          </div>
         </div>
       </div>
     </div>
